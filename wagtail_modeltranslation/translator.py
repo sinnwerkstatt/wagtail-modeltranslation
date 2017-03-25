@@ -213,8 +213,11 @@ def add_manager(model):
 
             manager.__class__ = NewMultilingualManager
 
-    for _, attname, cls in model._meta.concrete_managers + model._meta.abstract_managers:
-        current_manager = getattr(model, attname)
+    managers = (
+        model._meta.local_managers
+    )
+
+    for current_manager in managers:
         prev_class = current_manager.__class__
         patch_manager_class(current_manager)
         if model._default_manager.__class__ is prev_class:
@@ -235,7 +238,7 @@ def patch_constructor(model):
 
     def new_init(self, *args, **kwargs):
         self._mt_init = True
-        if not self._deferred:
+        if not (VERSION < (1, 10) and getattr(model, '_deferred', False)): 
             populate_translation_fields(self.__class__, kwargs)
             for key, val in list(kwargs.items()):
                 new_key = rewrite_lookup_key(model, key)
@@ -562,7 +565,7 @@ class Translator(object):
         Returns an instance of translation options with translated fields
         defined for the ``model`` and inherited from superclasses.
         """
-        if model._deferred:
+        if VERSION < (1, 10) and getattr(model, '_deferred', False):
             model = model._meta.proxy_for_model
         if model not in self._registry:
             # Create a new type for backwards compatibility.

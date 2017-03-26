@@ -213,10 +213,8 @@ def add_manager(model):
 
             manager.__class__ = NewMultilingualManager
 
-    managers = (model._meta.local_managers if NEW_MANAGER_API else
-                (getattr(model, x[1]) for x in
-                 model._meta.concrete_managers + model._meta.abstract_managers))
-    for current_manager in managers:
+    for _, attname, cls in model._meta.concrete_managers + model._meta.abstract_managers:
+        current_manager = getattr(model, attname)
         prev_class = current_manager.__class__
         patch_manager_class(current_manager)
         if model._default_manager.__class__ is prev_class:
